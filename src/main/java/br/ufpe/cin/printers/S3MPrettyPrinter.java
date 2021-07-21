@@ -5,8 +5,6 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.StringUtils;
-
 import br.ufpe.cin.mergers.util.IndentationUtils;
 import de.ovgu.cide.fstgen.ast.AbstractFSTPrintVisitor;
 import de.ovgu.cide.fstgen.ast.FSTTerminal;
@@ -33,27 +31,29 @@ public abstract class S3MPrettyPrinter extends AbstractFSTPrintVisitor {
 
     @Override
     public boolean visit(FSTTerminal terminal) {
-
         String body = terminal.getBody();
         String prefix = terminal.getSpecialTokenPrefix();
 
-        if (body.isEmpty()) { // if node has been deleted, we trim the prefix to remove unnecessary blank
-                              // lines
-            printToken(IndentationUtils.removePostIndentationAndLineBreaks(prefix));
+        String token = "";
+        if (body.isEmpty()) {
+            // Node has been removed, so the prefix is trimmed to avoid unnecessary blank lines
+            token = IndentationUtils.removePostIndentationAndLineBreaks(prefix);
         } else if (hasConflict(body)) {
-            printToken(IndentationUtils.removePostIndentation(prefix) + body);
-        } else if(isFirstLineOfCode(prefix) && isImportOrPackageStatement(terminal)) { 
-            // if there are statements on the first line, there is no line break for them.
-            if(printedStatementOnFirstLine) {
-                printToken('\n' + prefix + body);
+            // Node content is inside conflict, so the prefix is trimmed and a new line is added
+            token = IndentationUtils.removePostIndentation(prefix) + "\n" + body;
+        } else if (isFirstLineOfCode(prefix) && isImportOrPackageStatement(terminal)) {
+            // Statements on the first line don't have line breaks before them
+            if (printedStatementOnFirstLine) {
+                token = "\n" + prefix + body;
             } else {
-                printToken(prefix + body);
+                token = prefix + body;
                 printedStatementOnFirstLine = true;
             }
         } else {
-            printToken(prefix + body);
+            token = prefix + body;
         }
 
+        printToken(token);
         return false;
     }
 
